@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import portrait from "./assets/vinay-cartoonish.png";
+import { Footer } from "./components/Footer";
 
 interface ZigzagHighlighterProps {
   children: ReactNode;
@@ -93,7 +94,8 @@ const projects = [
 
 function App() {
   return (
-    <main className="page-shell">
+    <>
+      <main className="page-shell">
       <nav className="site-nav" aria-label="Main navigation">
         <a className="brand" href="#top">
           <Crown aria-hidden="true" /> Vinay Sikarwar
@@ -209,7 +211,7 @@ function App() {
             applications using the MERN stack. I love building things, solving
             tricky problems, and constantly learning new technologies.
           </p>
-          <div className="details hand" id="contact">
+          <div className="details hand">
             <span>
               <MapPin aria-hidden="true" /> Indore, India
             </span>
@@ -262,6 +264,8 @@ function App() {
         </div>
       </section>
     </main>
+    <Footer />
+  </>
   );
 }
 
