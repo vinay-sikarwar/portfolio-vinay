@@ -13,7 +13,7 @@ import footerBackground from "../assets/footer-background.png";
 
 export function Footer() {
   const [copied, setCopied] = useState(false);
-  const email = "vinaysikarwar.dev@gmail.com";
+  const email = "vinaysikarwar199@gmail.com";
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(email);
@@ -92,7 +92,7 @@ export function Footer() {
         <div className="footer-scenic-spacer" aria-hidden="true" />
 
         {/* Compact bottom bar over dark forest foreground */}
-        <div className="footer-bottom-bar-wrap">
+        {/* <div className="footer-bottom-bar-wrap">
           <div className="footer-bottom-grid">
             <div className="footer-brand-col">
               <a
@@ -168,7 +168,7 @@ export function Footer() {
               <ArrowUp className="arrow-icon" aria-hidden="true" />
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </footer>
   );
