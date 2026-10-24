@@ -48,9 +48,7 @@ export function Footer() {
           </div>
 
           <h2 className="footer-cta-title">
-            Have a project in mind,
-            <br />
-            <span>or just want to say hi?</span>
+            Have a project in mind, <span>or just want to say hi?</span>
           </h2>
 
           <p className="footer-cta-desc">

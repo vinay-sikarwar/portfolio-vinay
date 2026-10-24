@@ -130,7 +130,7 @@ a {
   font-size: 1.25rem;
 }
 .scribble-line {
-  width: 20rem;
+  width: min(20rem, 90%);
   height: 1px;
   margin-top: 0.2rem;
   background: #77736b66;
@@ -807,6 +807,7 @@ a {
 .stack-area {
   position: relative;
   padding-bottom: 4rem;
+  overflow: visible;
 }
 .stack-annotation {
   position: absolute;
@@ -921,6 +922,7 @@ a {
   align-items: center;
   color: var(--muted);
   transform: rotate(-6deg);
+  pointer-events: none;
 }
 .dream-note svg {
   width: 24px;
@@ -942,6 +944,7 @@ a {
 @media (max-width: 800px) {
   .page-shell {
     padding: 0 1.25rem 3rem;
+    overflow-x: hidden;
   }
   .site-nav {
     height: auto;
@@ -969,8 +972,15 @@ a {
   .portrait-wrap {
     max-width: 400px;
   }
+  /* About section: give more room, stack cleanly */
   .about-grid {
     margin-top: 4rem;
+    gap: 1.5rem;
+  }
+  /* Push section-heading a bit right to clear the rays decoration */
+  .section-heading {
+    margin-left: 2rem;
+    margin-bottom: 1.25rem;
   }
   .projects-section {
     margin-top: 6rem;
@@ -1009,8 +1019,45 @@ a {
   .about-copy h2 {
     font-size: 2.8rem;
   }
+  /* Stack area: make annotation flow in-place, not overlapping */
+  .stack-area {
+    padding-bottom: 0;
+  }
+  .stack-annotation {
+    position: static;
+    transform: rotate(-3deg);
+    margin-bottom: 0.75rem;
+    display: inline-flex;
+  }
   .stack-card {
     padding: 1.25rem;
+  }
+  /* Skills: 2 columns on mobile so icons aren't tiny */
+  .skills-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.75rem 1rem;
+  }
+  .skill-divider {
+    display: none;
+  }
+  /* Dream-note: inline after the card instead of absolute */
+  .dream-note {
+    position: static;
+    flex-direction: row;
+    transform: rotate(-3deg);
+    margin-top: 1rem;
+    align-self: flex-end;
+    gap: 0.4rem;
+  }
+  .dream-note svg {
+    display: none;
+  }
+  .dream-note span:not(.dream-line) {
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+  .dream-line {
+    font-size: 1.4rem;
   }
   .projects-scroll-wrapper {
     margin: 2.5rem auto 0;
@@ -1020,9 +1067,46 @@ a {
     position: static;
     margin-top: 0;
   }
-  .dream-note {
-    right: 0.5rem;
-    bottom: -0.2rem;
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: clamp(2.1rem, 10vw, 3rem);
+  }
+  .subtitle {
+    font-size: 1.05rem;
+  }
+  .portrait-wrap {
+    max-width: 320px;
+  }
+  .greeting {
+    font-size: 0.95rem;
+  }
+  .greeting strong {
+    font-size: 1.5rem;
+  }
+  .portrait-note {
+    font-size: 0.82rem;
+    right: -0.5rem;
+  }
+  .projects-heading h2 {
+    font-size: clamp(2.2rem, 9vw, 3rem);
+  }
+  .section-heading h2 {
+    font-size: clamp(2rem, 9vw, 2.8rem);
+  }
+  .skills-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.4rem 0.75rem;
+  }
+  .stack-card {
+    padding: 1rem;
+  }
+  .about-grid {
+    margin-top: 3rem;
+  }
+  .project-copy h3 {
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
   }
 }
 
@@ -1034,7 +1118,7 @@ a {
     gap: 0.55rem 1rem;
   }
   .skills-grid {
-    gap: 1.25rem 0.25rem;
+    gap: 1.25rem 0.5rem;
   }
 }
 
@@ -1401,23 +1485,91 @@ a {
 
 @media (max-width: 640px) {
   .site-footer {
-    margin-top: 3.5rem;
+    margin-top: 2.5rem;
   }
 
+  /* More top padding so title has breathing room */
   .footer-content {
-    padding: 2.25rem 1rem 1.25rem;
+    padding: 2.5rem 1.5rem 1.75rem;
   }
 
+  /* Very short top fade — let the sky show immediately */
+  .footer-bg-top-fade {
+    height: 50px;
+  }
+
+  /* Tall spacer: landscape takes ~50% of footer on mobile */
+  .footer-scenic-spacer {
+    height: clamp(140px, 38vw, 220px);
+  }
+
+  /* CTA block: full width, left-aligned text like the mockup */
+  .footer-cta-block {
+    max-width: 100%;
+    text-align: left;
+    align-items: flex-start;
+    padding: 0;
+  }
+
+  .footer-cta-badge {
+    font-size: 1.2rem;
+    margin-bottom: 0.6rem;
+  }
+
+  /* Very large title — wraps naturally across 3 lines */
+  .footer-cta-title {
+    font-size: clamp(2.3rem, 9.5vw, 3.2rem);
+    line-height: 1.07;
+    letter-spacing: -0.04em;
+    margin-bottom: 1rem;
+  }
+
+  .footer-cta-desc {
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+    line-height: 1.55;
+    text-align: center;
+    max-width: 340px;
+    align-self: center;
+  }
+
+  /* Buttons: centred column, ~82% width — not edge-to-edge */
   .footer-cta-actions {
     flex-direction: column;
+    align-items: center;
     width: 100%;
+    gap: 0.7rem;
   }
 
   .footer-btn {
-    width: 100%;
+    width: 82%;
+    max-width: 340px;
     justify-content: center;
+    padding: 0.95rem 1.75rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    letter-spacing: 0.01em;
   }
 
+  /* Primary: dark pill with depth */
+  .footer-btn-primary {
+    background: #2c2b28;
+    box-shadow: 0 8px 24px rgba(20, 18, 14, 0.32);
+  }
+
+  /* Secondary: clean light pill */
+  .footer-btn-secondary {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(210, 205, 195, 0.9);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    font-size: 0.9rem;
+    color: #3a3830;
+  }
+
+  /* Bottom dark bar */
   .footer-bottom-bar-wrap {
     padding: 1.35rem 1.15rem 1rem;
     border-radius: 1.25rem;
@@ -1427,6 +1579,30 @@ a {
     flex-direction: column;
     gap: 0.85rem;
     text-align: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .footer-content {
+    padding: 2rem 1.25rem 1.5rem;
+  }
+
+  .footer-cta-title {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+  }
+
+  .footer-btn {
+    width: 90%;
+    font-size: 0.95rem;
+    padding: 0.88rem 1.5rem;
+  }
+
+  .footer-cta-desc {
+    font-size: 0.9rem;
+  }
+
+  .footer-scenic-spacer {
+    height: clamp(130px, 40vw, 200px);
   }
 }
 

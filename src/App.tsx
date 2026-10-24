@@ -146,6 +146,14 @@ function App() {
               A few projects from the intersection of thoughtful design and useful
               technology.
             </p>
+            <div className="scroll-note">
+              <ArrowDown aria-hidden="true" />
+              <span className="hand">
+                Scroll to see
+                <br />
+                my projects
+              </span>
+            </div>
           </div>
           <div className="project-list">
             {loading && projects.length === 0 ? (
@@ -239,14 +247,6 @@ function App() {
               </span>
               <span>
                 <CodeXml aria-hidden="true" /> MERN | Java DSA
-              </span>
-            </div>
-            <div className="scroll-note">
-              <ArrowDown aria-hidden="true" />
-              <span className="hand">
-                Scroll to see
-                <br />
-                my projects
               </span>
             </div>
           </div>
