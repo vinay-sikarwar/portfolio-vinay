@@ -9,6 +9,7 @@ export interface PortfolioProject {
   category?: string;
   summary?: string;
   updatedAt?: string;
+  rawUpdatedAt?: string;
   body?: string;
   content?: string;
   link?: string;
@@ -58,7 +59,11 @@ export function normalizeProject(project: PortfolioProject): PortfolioProject {
  * Parses various updatedAt formats (e.g. "Just now", "2 hours ago", "10/13/2026", ISO strings)
  * into a comparable numeric epoch timestamp.
  */
-export function parseUpdatedTime(val?: string | null): number {
+export function parseUpdatedTime(val?: string | null, rawVal?: string | null): number {
+  if (rawVal) {
+    const rawTime = Date.parse(rawVal);
+    if (!isNaN(rawTime)) return rawTime;
+  }
   if (!val) return 0;
   const str = String(val).trim().toLowerCase();
 
@@ -100,8 +105,8 @@ export function parseUpdatedTime(val?: string | null): number {
  */
 export function sortProjectsByUpdated(projects: PortfolioProject[]): PortfolioProject[] {
   return [...projects].map(normalizeProject).sort((a, b) => {
-    const timeA = parseUpdatedTime(a.updatedAt);
-    const timeB = parseUpdatedTime(b.updatedAt);
+    const timeA = parseUpdatedTime(a.updatedAt, a.rawUpdatedAt);
+    const timeB = parseUpdatedTime(b.updatedAt, b.rawUpdatedAt);
     if (timeB !== timeA) {
       return timeB - timeA;
     }
@@ -110,56 +115,138 @@ export function sortProjectsByUpdated(projects: PortfolioProject[]): PortfolioPr
   });
 }
 
+export const STORAGE_CACHE_KEY = 'vinay_portfolio_projects_cache_v2';
+export const STORAGE_TIMESTAMP_KEY = 'vinay_portfolio_projects_cache_time';
+
+function getCachedProjects(): PortfolioProject[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return sortProjectsByUpdated(parsed);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not read cached portfolio projects:', err);
+  }
+  return null;
+}
+
+// In-flight singleton promise to avoid duplicate network calls
+let inFlightFetchPromise: Promise<PortfolioProject[] | null> | null = null;
+
+export async function fetchLiveProjects(): Promise<PortfolioProject[] | null> {
+  if (inFlightFetchPromise) return inFlightFetchPromise;
+
+  inFlightFetchPromise = (async () => {
+    try {
+      const baseUrl = import.meta.env['VITE_API_BASE_URL'];
+      const slug = import.meta.env['VITE_API_SLUG'];
+      const token = import.meta.env['VITE_API_TOKEN'];
+      const endpoint = `${baseUrl}/api/v1/${slug}/project-with-blog`;
+
+      // 20-second timeout controller so cold-starts don't freeze the app indefinitely
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+      const res = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch project data: HTTP ${res.status}`);
+      }
+
+      const json = await res.json();
+      if (json && Array.isArray(json.data) && json.data.length > 0) {
+        const sorted = sortProjectsByUpdated(json.data);
+        try {
+          localStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(sorted));
+          localStorage.setItem(STORAGE_TIMESTAMP_KEY, Date.now().toString());
+        } catch (storageErr) {
+          console.warn('Failed to cache projects in localStorage:', storageErr);
+        }
+        return sorted;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching live portfolio projects:', err);
+      return null;
+    } finally {
+      inFlightFetchPromise = null;
+    }
+  })();
+
+  return inFlightFetchPromise;
+}
+
+// Eager fetch as soon as this module is loaded by Vite
+if (typeof window !== 'undefined') {
+  fetchLiveProjects().catch(() => {});
+}
+
 export function usePortfolioProjects() {
-  const [projects, setProjects] = useState<PortfolioProject[]>(() =>
-    sortProjectsByUpdated(FALLBACK_PROJECTS)
-  );
-  const [loading, setLoading] = useState<boolean>(true);
+  const [projects, setProjects] = useState<PortfolioProject[]>(() => {
+    const cached = getCachedProjects();
+    return cached ?? [];
+  });
+
+  const [loading, setLoading] = useState<boolean>(() => {
+    const cached = getCachedProjects();
+    return !cached || cached.length === 0;
+  });
+
+  const [isSyncing, setIsSyncing] = useState<boolean>(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadData() {
-      try {
-        const baseUrl =
-          import.meta.env['VITE_API_BASE_URL'];
-        const slug =
-          import.meta.env['VITE_API_SLUG'];
-        const token =
-          import.meta.env['VITE_API_TOKEN'];
+    async function load() {
+      setIsSyncing(true);
+      const data = await fetchLiveProjects();
+      if (!isMounted) return;
 
-        // Project-with-blog endpoint
-        const endpoint = `${baseUrl}/api/v1/${slug}/project-with-blog`;
-
-        const res = await fetch(endpoint, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      if (data && data.length > 0) {
+        setProjects(data);
+      } else {
+        // Fallback if network failed and no cached data exists
+        setProjects((prev) => {
+          if (prev.length === 0 && FALLBACK_PROJECTS.length > 0) {
+            return sortProjectsByUpdated(FALLBACK_PROJECTS);
+          }
+          return prev;
         });
-
-        if (!res.ok) {
-          throw new Error(`Failed to fetch project-with-blog data: ${res.status}`);
-        }
-
-        const json = await res.json();
-        if (isMounted && json && Array.isArray(json.data) && json.data.length > 0) {
-          setProjects(sortProjectsByUpdated(json.data));
-        }
-      } catch (err) {
-        console.error('Error fetching portfolio project-with-blog data:', err);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
       }
+
+      setLoading(false);
+      setIsSyncing(false);
     }
 
-    loadData();
+    load();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  return { projects, loading };
+  // Developer / debug helper to test loading states in browser
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).clearProjectsCache = () => {
+        localStorage.removeItem(STORAGE_CACHE_KEY);
+        localStorage.removeItem(STORAGE_TIMESTAMP_KEY);
+        console.log('[Portfolio] Project cache cleared. Reloading...');
+        window.location.reload();
+      };
+    }
+  }, []);
+
+  return { projects, loading, isSyncing };
 }

@@ -12,6 +12,7 @@ import {
 import { motion } from "framer-motion";
 import portrait from "./assets/vinay-cartoonish.png";
 import { Footer } from "./components/Footer";
+import { ProjectsLoader } from "./components/ProjectsLoader";
 import { usePortfolioProjects } from "./hooks/usePortfolioProjects";
 
 interface ZigzagHighlighterProps {
@@ -70,7 +71,7 @@ const skills = [
 const artThemes = ["pulse", "bloom", "atlas", "signal"] as const;
 
 function App() {
-  const { projects } = usePortfolioProjects();
+  const { projects, loading, isSyncing } = usePortfolioProjects();
 
   return (
     <>
@@ -127,7 +128,15 @@ function App() {
           aria-labelledby="projects-title"
         >
           <div className="projects-heading">
-            <span className="hand project-kicker">Selected work ↘</span>
+            <div className="project-kicker-col">
+              <span className="hand project-kicker">Selected work ↘</span>
+              {isSyncing && projects.length > 0 && (
+                <div className="project-syncing-pill" aria-live="polite">
+                  <span className="syncing-pulse-dot" />
+                  <span>Syncing...</span>
+                </div>
+              )}
+            </div>
             <h2 id="projects-title">
               Things I&apos;ve
               <br />
@@ -139,64 +148,71 @@ function App() {
             </p>
           </div>
           <div className="project-list">
+            {loading && projects.length === 0 ? (
+              <ProjectsLoader />
+            ) : projects.length === 0 ? (
+              <div className="projects-empty-state">
+                <p>No projects available right now. Please check back soon!</p>
+              </div>
+            ) : (
+              projects.map((project, index) => {
+                const theme = artThemes[index % artThemes.length];
+                const projectImg =
+                  project.image || project.coverImage || project.photo;
+                const projectPath = `/${project.slug || project.id}`;
 
-            {projects.map((project, index) => {
-              const theme = artThemes[index % artThemes.length];
-              const projectImg =
-                project.image || project.coverImage || project.photo;
-              const projectPath = `/${project.slug || project.id}`;
-
-              return (
-                <article
-                  className={`project-row ${index % 2 ? "project-row-reverse" : ""
-                    }`}
-                  key={project.id || project.title}
-                >
-                  <Link
-                    className={`project-art project-art-${theme}`}
-                    to={projectPath}
-                    aria-label={`${project.title} project preview`}
+                return (
+                  <article
+                    className={`project-row ${index % 2 ? "project-row-reverse" : ""
+                      }`}
+                    key={project.id || project.title}
                   >
-                    <div className="art-window">
-                      <span className="window-dots">
-                        <i />
-                        <i />
-                        <i />
-                      </span>
-                      <span className="art-brand">{project.title}</span>
-                      <span className="art-shape" />
-                      <span className="art-line line-one" />
-                      <span className="art-line line-two" />
-                      {projectImg && (
-                        <div className="art-hover-reveal">
-                          <img
-                            src={projectImg}
-                            alt={`${project.title} preview`}
-                            className="art-reveal-image"
-                            loading="lazy"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="project-copy">
-                    <div className="project-meta-row">
-                      <span className="project-number">0{index + 1}</span>
-                      {project.category && (
-                        <span className="project-category-tag">
-                          {project.category}
+                    <Link
+                      className={`project-art project-art-${theme}`}
+                      to={projectPath}
+                      aria-label={`${project.title} project preview`}
+                    >
+                      <div className="art-window">
+                        <span className="window-dots">
+                          <i />
+                          <i />
+                          <i />
                         </span>
-                      )}
-                    </div>
-                    <h3>{project.title}</h3>
-                    <p>{project.summary}</p>
-                    <Link className="project-link" to={projectPath}>
-                      View project <ArrowUpRight aria-hidden="true" />
+                        <span className="art-brand">{project.title}</span>
+                        <span className="art-shape" />
+                        <span className="art-line line-one" />
+                        <span className="art-line line-two" />
+                        {projectImg && (
+                          <div className="art-hover-reveal">
+                            <img
+                              src={projectImg}
+                              alt={`${project.title} preview`}
+                              className="art-reveal-image"
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </Link>
-                  </div>
-                </article>
-              );
-            })}
+                    <div className="project-copy">
+                      <div className="project-meta-row">
+                        <span className="project-number">0{index + 1}</span>
+                        {project.category && (
+                          <span className="project-category-tag">
+                            {project.category}
+                          </span>
+                        )}
+                      </div>
+                      <h3>{project.title}</h3>
+                      <p>{project.summary}</p>
+                      <Link className="project-link" to={projectPath}>
+                        View project <ArrowUpRight aria-hidden="true" />
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </div>
         </section>
 
